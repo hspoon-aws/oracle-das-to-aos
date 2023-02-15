@@ -1,0 +1,54 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  sam-kinesis-rds-das
+
+  Sample SAM Template for sam-kinesis-rds-das
+
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 3
+    
+Parameters:
+  RegionName:
+    Type: String
+    Default: us-east-1
+  RdsResourceId:
+    Type: String
+  ESURL:
+    Type: String
+  ESIndex:
+    Type: String
+    Default: oracle-das-default
+  
+   
+
+Resources:
+  RdsDasToAosFunction:
+    Type: AWS::Serverless::Function # More info about Function Resource: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#awsserverlessfunction
+    Properties:
+      CodeUri: rds_das_to_aos/
+      Handler: app.lambda_handler
+      Runtime: python3.7
+      Architectures:
+        - x86_64
+      Environment:
+        Variables:
+          region_name: !Ref RegionName
+          resource_id: !Ref RdsResourceId
+          es_url: !Ref ESURL
+          es_index: !Ref ESIndex
+      Events:
+        
+
+Outputs:
+  # ServerlessRestApi is an implicit API created out of Events key under Serverless::Function
+  # Find out more about other implicit resources you can reference within SAM
+  # https://github.com/awslabs/serverless-application-model/blob/master/docs/internals/generated_resources.rst#api
+  RdsDasToAosFunction:
+    Description: "RDS DAS to AOS Lambda Function ARN"
+    Value: !GetAtt RdsDasToAosFunction.Arn
+  RdsDasToAosFunctionIamRole:
+    Description: "Implicit IAM Role created for RdsDasToAosFunction function"
+    Value: !GetAtt RdsDasToAosFunctionRole.Arn

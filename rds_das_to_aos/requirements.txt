@@ -1,0 +1,4 @@
+requests
+aws_encryption_sdk
+requests_aws4auth
+boto3
