@@ -1,11 +1,43 @@
-# sam-rds-das-toaos
+# Process RDS for Oracle Database Activity Stream (DAS) into Amazon OpenSearch (AOS) 2.x using Lambda 
 
 This project contains source code and supporting files for a serverless application that you can deploy with the SAM CLI. It includes the following files and folders.
 
 - rds_das_to_aos - Code for the application's Lambda function to put RDS for Oracle Database Activity Stream (DAS) into Amazon OpenSearch (AOS) 
 - template.yaml - A template that defines the application's AWS resources.
 
-The application uses several AWS resources, including Lambda functions and an API Gateway API. These resources are defined in the `template.yaml` file in this project. You can update the template to add AWS resources through the same deployment process that updates your application code.
+---
+## Overview
+
+![Architecture](RDS-DAS-to-AOS.drawio.png)
+
+1. RDS for Oracle enable Database Activity Stream to send Unified Audit Policy events into Kinesis Data Stream
+2. Data in Kinesis Data stream are encrypted by KMS using customer-managed key
+3. Kinesis Data stream triggers rds_das_to_aos Lambda function (100 item/batch by default)
+4. Lambda function decrypt, decode, filter the data stream into Opensearch documents format
+5. Lambda function call PUT index API to ingest events into Amazon Opensearch
+6. Oracle database activity events can be indexed in Amazon Opensearch in near real-time for log analysis and monitoring
+
+*PS: please make sure all components and actions are governed by IAM policy permission)*
+
+Reference: 
+
+- For the overview conceptual steps, please follow this workshop https://catalog.us-east-1.prod.workshops.aws/workshops/098605dc-8eee-4e84-85e9-c5c6c9e43de2/en-US/lab5-db-activity-stream (Although the workshop is talking about postgresql)
+
+---
+## Prerequisite and manual configuration
+
+This SAM template is not a complete infrastructure of the project, but just Lambda part of the whole arcthiecture. It requires user to 
+
+1. Setup RDS for Oracle with Database Activity Stream enabled [https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/DBActivityStreams.html]
+2. Setup Amazon OpenSearch cluster [https://docs.aws.amazon.com/opensearch-service/latest/developerguide/gsg.html]
+3. Add Trigger event as Kinesis data stream in Lambda function after SAM deploy
+
+
+
+---
+## Development guide using SAM
+
+The Lambda resource is defined in the `template.yaml` file in this project. You can update the template to add AWS resources through the same deployment process that updates your application code.
 
 If you prefer to use an integrated development environment (IDE) to build and test your application, you can use the AWS Toolkit.  
 The AWS Toolkit is an open source plug-in for popular IDEs that uses the SAM CLI to build and deploy serverless applications on AWS. The AWS Toolkit also adds a simplified step-through debugging experience for Lambda function code. See the following links to get started.
