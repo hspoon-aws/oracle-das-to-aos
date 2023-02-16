@@ -1,11 +1,13 @@
 # Process RDS for Oracle Database Activity Stream (DAS) into Amazon OpenSearch (AOS) 2.x using Lambda 
 
+`This is for demo and reference only, not production-ready`
+
 This project contains source code and supporting files for a serverless application that you can deploy with the SAM CLI. It includes the following files and folders.
 
 - rds_das_to_aos - Code for the application's Lambda function to put RDS for Oracle Database Activity Stream (DAS) into Amazon OpenSearch (AOS) 
 - template.yaml - A template that defines the application's AWS resources.
 
----
+
 ## Overview
 
 ![Architecture](RDS-DAS-to-AOS.drawio.png)
@@ -23,7 +25,7 @@ Reference:
 
 - For the overview conceptual steps, please follow this workshop https://catalog.us-east-1.prod.workshops.aws/workshops/098605dc-8eee-4e84-85e9-c5c6c9e43de2/en-US/lab5-db-activity-stream (Although the workshop is talking about postgresql)
 
----
+
 ## Prerequisite and manual configuration
 
 This SAM template is not a complete infrastructure of the project, but just Lambda part of the whole arcthiecture. It requires user to 
@@ -34,7 +36,6 @@ This SAM template is not a complete infrastructure of the project, but just Lamb
 
 
 
----
 ## Development guide using SAM
 
 The Lambda resource is defined in the `template.yaml` file in this project. You can update the template to add AWS resources through the same deployment process that updates your application code.
