@@ -20,11 +20,9 @@ from requests_aws4auth import AWS4Auth
 
 REGION_NAME = os.environ['region_name'] # 'us-east-1'
 RESOURCE_ID = os.environ['resource_id'] #'cluster-2VRZBI263EBXMYD3BQUFSIQ554'
-BUCKET_NAME = os.environ['bucket_name'] # 'dastestbucket'
 
 enc_client = aws_encryption_sdk.EncryptionSDKClient(commitment_policy=CommitmentPolicy.REQUIRE_ENCRYPT_ALLOW_DECRYPT)
 kms = boto3.client('kms', region_name=REGION_NAME)
-# s3 = boto3.client('s3')
 todays_date = datetime.datetime.now()
 
 # for push es
@@ -85,7 +83,7 @@ def lambda_handler(event, context):
                                               
         payload = decrypt_decompress(payload_decoded, data_key_decrypt_result['Plaintext'])  
         payload = json.loads(payload)
-        #print(payload)
+        
         if payload['type'] == 'DatabaseActivityMonitoringRecord':
             
             documents = []
@@ -97,89 +95,13 @@ def lambda_handler(event, context):
 
                 # Create the JSON document
                 document = { "id": id, "timestamp": timestamp, "message": dbEvent }
-                print(document)
                 documents.append(document)
                 # Index the document
                 r = requests.put(url + id, auth=awsauth, json=document, headers=headers)
-                #print(r.json())
+                print(r.json())
                 count += 1
         
-    # client = opensearch.connect(
-    #     host=host,
-    # #     username='FGAC-USERNAME(OPTIONAL)',
-    # #     password='FGAC-PASSWORD(OPTIONAL)'
-    # )
-    
-    # opensearch.index_documents(
-    #     client,
-    #     documents=documents,
-    #     index=index
-    # )
         
     print ('Processed ' + str(count) + ' items.')
     return 'Processed ' + str(count) + ' items.'
         
-    #     recID = dasRecord['eventID']
-    #     data = base64.b64decode(dasRecord['kinesis']['data'])
-    #     # Do processing here
-    #     val = processDASRecord(recID,data)
-    #     #Record count has to match when we return to Firehose. If we don’t want certain records to reach destination – result should be equal to Dropped. 
-    #     if len(val)>0:
-    #         output_record = {
-    #             'recordId': dasRecord['eventID'],
-    #             'result': 'Ok',
-    #             'data': base64.b64encode(json.dumps(val).encode("utf-8"))
-    #         }
-    #     else:
-    #         output_record = {
-    #             'recordId': dasRecord['eventID'],
-    #             'result': 'Dropped',
-    #             'data': base64.b64encode(b'this is a dropped event')
-    #         }
-    #     output.append(output_record)
-
-    # print('Successfully processed {} records.'.format(len(event['records'])))
-    # return {'records': output}
-
-# def processDASRecord(rID, rec):
-#     record = json.loads(rec)
-#     if record['type'] == 'DatabaseActivityMonitoringRecords':
-#         dbEvents = record["databaseActivityEvents"]
-#         dataKey = base64.b64decode(record["key"])
-#         try:
-#             #Decrypt the envelope master key using KMS
-#             data_key_decrypt_result = kms.decrypt(CiphertextBlob=dataKey, EncryptionContext={'aws:rds:dbc-id':RESOURCE_ID})
-#         except Exception as e:
-#             print(e)
-#             raise e
-
-#         try:
-#             plaintextEvents = decrypt_decompress(base64.b64decode(dbEvents), data_key_decrypt_result['Plaintext'])
-#         except Exception as e:
-#             print(e)
-#             raise e
-        
-#         retObj = []
-#         #parse thru all activity and categorize it.
-#         try:
-#             events = json.loads(plaintextEvents)
-#             for dbEvent in events['databaseActivityEventList']:
-#                 #filter out events which you don't want to log.
-#                 if dbEvent['type']== "heartbeat": #or  eventType == "READ":
-#                     print ("Heart beat event - ignored event, dropping it.")
-#                     continue
-
-#                 if not (dbEvent.get('command') is None):
-#                     eventType = dbEvent['command']
-#                     #use this section to log all events in separate S3 folder. 
-#                     #parse and write individual type of events to separate S3 folders. 
-#                     s3suffix = '/' + str(todays_date.year) + '/' + str(todays_date.month) + '/' + str(todays_date.day) + '/' + rID + '.txt' 
-#                     s3.put_object(Body=json.dumps(dbEvent, ensure_ascii=False), Bucket=BUCKET_NAME, Key = 'parsed/'+ eventType + s3suffix )
-                
-#                 retObj.append(dbEvent)
-
-#         except Exception as e:
-#             print (e)
-#             raise e
-        
-#         return retObj
