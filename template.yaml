@@ -8,7 +8,7 @@ Description: >
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
 Globals:
   Function:
-    Timeout: 3
+    Timeout: 300
     
 Parameters:
   RegionName:
@@ -21,6 +21,8 @@ Parameters:
   ESIndex:
     Type: String
     Default: oracle-das-default
+  DASKinesisStreamArn:
+    Type: String
   
    
 
@@ -31,6 +33,8 @@ Resources:
       CodeUri: rds_das_to_aos/
       Handler: app.lambda_handler
       Runtime: python3.7
+      Timeout: 300
+      MemorySize: 512
       Architectures:
         - x86_64
       Environment:
@@ -39,7 +43,28 @@ Resources:
           resource_id: !Ref RdsResourceId
           es_url: !Ref ESURL
           es_index: !Ref ESIndex
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - "es:ESHttpPost"
+                - "es:ESHttpPut"
+                - "logs:CreateLogGroup"
+                - "logs:CreateLogStream"
+                - "logs:PutLogEvents"
+                - "kinesis:GetShardIterator"
+                - "kinesis:GetRecords"
+                - "kinesis:DescribeStream"
+                - "kinesis:ListStreams"
+              Resource: "*"
       Events:
+        KinesisTrigger:
+          Type: Kinesis
+          Properties:
+            Stream: !Ref DASKinesisStreamArn
+            StartingPosition: TRIM_HORIZON
+            BatchSize: 100
         
 
 Outputs:
@@ -52,3 +77,4 @@ Outputs:
   RdsDasToAosFunctionIamRole:
     Description: "Implicit IAM Role created for RdsDasToAosFunction function"
     Value: !GetAtt RdsDasToAosFunctionRole.Arn
+
