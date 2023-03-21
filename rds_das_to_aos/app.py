@@ -67,7 +67,7 @@ def decrypt_decompress(payload, key):
 #Lambda Handler entry point
 def lambda_handler(event, context):
     output = []
-    print("Received event: " + json.dumps(event, indent=2))
+    # print("Received event: " + json.dumps(event, indent=2))
     count = 0
     for dasRecord in event['Records']:
         id = dasRecord['eventID']
@@ -98,7 +98,7 @@ def lambda_handler(event, context):
                 documents.append(document)
                 # Index the document
                 r = requests.put(url + id, auth=awsauth, json=document, headers=headers)
-                #print(r.json())
+                print(r.json())
                 count += 1
         
         
