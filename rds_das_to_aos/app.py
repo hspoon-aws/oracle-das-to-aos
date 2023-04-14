@@ -68,10 +68,21 @@ def decrypt_decompress(payload, key):
 def lambda_handler(event, context):
     output = []
     # print("Received event: " + json.dumps(event, indent=2))
-    count = 0
     for dasRecord in event['Records']:
         id = dasRecord['eventID']
-        timestamp = dasRecord['kinesis']['approximateArrivalTimestamp']
+        kinesis_timestamp = dasRecord['kinesis']['approximateArrivalTimestamp']
+
+        # Convert the timestamp to seconds, as the datetime.fromtimestamp() method expects seconds
+        kinesis_timestamp_seconds = kinesis_timestamp / 1000
+
+        # Convert the timestamp to a Python datetime object
+        arrival_datetime = datetime.fromtimestamp(kinesis_timestamp_seconds)
+
+        # Format the datetime object into an OpenSearch-compliant ISO 8601 string
+        opensearch_timestamp = arrival_datetime.isoformat()
+
+        # Print the OpenSearch timestamp
+        # print(opensearch_timestamp)
         
         record_data = dasRecord['kinesis']['data']
         record_data = base64.b64decode(record_data)
@@ -87,6 +98,7 @@ def lambda_handler(event, context):
         if payload['type'] == 'DatabaseActivityMonitoringRecord':
             
             documents = []
+            responses = []
             for dbEvent in payload['databaseActivityEventList']:
                 
                 if dbEvent['type']== "heartbeat": #or  eventType == "READ":
@@ -94,14 +106,17 @@ def lambda_handler(event, context):
                     continue
 
                 # Create the JSON document
-                document = { "id": id, "timestamp": timestamp, "message": dbEvent }
+                document = { "id": id, "timestamp": opensearch_timestamp, "message": dbEvent }
                 documents.append(document)
                 # Index the document
                 r = requests.put(url + id, auth=awsauth, json=document, headers=headers)
-                print(r.json())
-                count += 1
+                responses.append(r.json())
+            
+            print('Processed documents = ', documents)
+            print('Processed responses = ', responses)
+            # print ('Processed ' + str(count) + ' items.')
         
         
-    print ('Processed ' + str(count) + ' items.')
-    return 'Processed ' + str(count) + ' items.'
+    print ('Processed ' + str(documents) + '/' + str(event['Records']) + ' items.')
+    return 'Processed ' + str(documents) + '/' + str(event['Records']) + ' items.'
         
