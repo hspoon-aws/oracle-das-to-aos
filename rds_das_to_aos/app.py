@@ -70,19 +70,7 @@ def lambda_handler(event, context):
     # print("Received event: " + json.dumps(event, indent=2))
     for dasRecord in event['Records']:
         id = dasRecord['eventID']
-        kinesis_timestamp = dasRecord['kinesis']['approximateArrivalTimestamp']
-
-        # Convert the timestamp to seconds, as the datetime.fromtimestamp() method expects seconds
-        kinesis_timestamp_seconds = kinesis_timestamp / 1000
-
-        # Convert the timestamp to a Python datetime object
-        arrival_datetime = datetime.fromtimestamp(kinesis_timestamp_seconds)
-
-        # Format the datetime object into an OpenSearch-compliant ISO 8601 string
-        opensearch_timestamp = arrival_datetime.isoformat()
-
-        # Print the OpenSearch timestamp
-        # print(opensearch_timestamp)
+        #kinesis_timestamp = dasRecord['kinesis']['approximateArrivalTimestamp']
         
         record_data = dasRecord['kinesis']['data']
         record_data = base64.b64decode(record_data)
@@ -104,19 +92,38 @@ def lambda_handler(event, context):
                 if dbEvent['type']== "heartbeat": #or  eventType == "READ":
                     print ("Heart beat event - ignored event, dropping it.")
                     continue
+                
+                if dbEvent['clientApplication']== "RDS Activity Streams": #or  eventType == "READ":
+                    print ("RDS Activity Streams Event - ignored event, dropping it.")
+                    continue
+                
+                # Convert the timestamp to a Python datetime object
+                log_time = dbEvent['logTime'] + '00'
+                input_format = '%Y-%m-%d %H:%M:%S.%f%z'
+
+                # Parse the input string into a datetime object
+                dt = datetime.datetime.strptime(log_time, input_format)
+                
+                # Convert the datetime object to an ISO 8601 formatted string
+                iso_string = dt.isoformat()
 
                 # Create the JSON document
-                document = { "id": id, "timestamp": opensearch_timestamp, "message": dbEvent }
-                documents.append(document)
+                document = { "id": id, "timestamp": iso_string, "message": dbEvent }
+                
                 # Index the document
                 r = requests.put(url + id, auth=awsauth, json=document, headers=headers)
+                
+                documents.append(document)
                 responses.append(r.json())
             
-            print('Processed documents = ', documents)
-            print('Processed responses = ', responses)
+            if len(documents) > 0:
+                print(str(len(documents)) + 'Processed documents = ', documents)
+            
+            if len(responses) > 0:
+                print(str(len(responses)) +'Processed responses = ', responses)
             # print ('Processed ' + str(count) + ' items.')
         
         
-    print ('Processed ' + str(documents) + '/' + str(event['Records']) + ' items.')
-    return 'Processed ' + str(documents) + '/' + str(event['Records']) + ' items.'
+    print ('Processed ' + str(len(documents)) + '/' + str(len(event['Records'])) + ' items.')
+    return 'Processed ' + str(len(documents)) + '/' + str(len(event['Records'])) + ' items.'
         
